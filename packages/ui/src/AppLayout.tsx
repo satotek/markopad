@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
+import { useTheme } from "./ThemeProvider";
 
 export interface AppLayoutProps {
   /** Left panel content (typically NoteList) */
@@ -21,8 +22,10 @@ export function AppLayout({
   centerPanel,
   rightPanel,
 }: AppLayoutProps) {
+  const { colors } = useTheme();
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {leftPanel}
       {centerPanel}
       {rightPanel}
@@ -34,6 +37,5 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: "row",
-    backgroundColor: "#ffffff",
   },
 });

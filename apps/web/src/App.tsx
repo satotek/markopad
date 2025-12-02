@@ -4,7 +4,14 @@ import {
   type Note,
   type NoteMeta,
 } from "@markopad/core";
-import { AppLayout, NoteEditor, NoteList, PreviewPane } from "@markopad/ui";
+import {
+  AppLayout,
+  NoteEditor,
+  NoteList,
+  PreviewPane,
+  ThemeProvider,
+  useTheme,
+} from "@markopad/ui";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -13,10 +20,11 @@ import { StyleSheet, View } from "react-native";
 const storage = new InMemoryNoteStorage(createSampleNotes());
 
 /**
- * Main App component for MarkoPad web application.
- * Manages the note list, editor, and preview in a three-pane layout.
+ * Main app content with theme-aware styling.
  */
-export function App() {
+function AppContent() {
+  const { colors, colorScheme } = useTheme();
+
   // State for notes list
   const [notes, setNotes] = useState<NoteMeta[]>([]);
   // Currently selected note
@@ -62,7 +70,7 @@ export function App() {
         setContent(note.content);
       }
     },
-    [selectedNote, content]
+    [selectedNote, content],
   );
 
   // Handle content change
@@ -89,8 +97,8 @@ export function App() {
   }, [selectedNote, content, loadNotes]);
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="auto" />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
       <AppLayout
         leftPanel={
           <NoteList
@@ -120,9 +128,20 @@ export function App() {
   );
 }
 
+/**
+ * Main App component for MarkoPad web application.
+ * Wraps the app with ThemeProvider for dark mode support.
+ */
+export function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ffffff",
   },
 });
