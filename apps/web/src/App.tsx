@@ -1,20 +1,22 @@
 import {
   createSampleNotes,
+  FileSystemNoteStorage,
   InMemoryNoteStorage,
+  isFileSystemAccessSupported,
   type Note,
   type NoteMeta,
+  type NoteStorage,
+  pickDirectory,
 } from "@markopad/core";
 import { AppLayout, NoteEditor, NoteList, PreviewPane } from "@markopad/ui";
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
-
-// Initialize storage with sample notes
-const storage = new InMemoryNoteStorage(createSampleNotes());
 
 /**
  * Main App component for MarkoPad web application.
  * Manages the note list, editor, and preview in a three-pane layout.
+ * Supports both in-memory storage and file system storage.
  */
 export function App() {
   // State for notes list
@@ -23,10 +25,22 @@ export function App() {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   // Current editor content
   const [content, setContent] = useState("");
+  // Current storage instance
+  const storageRef = useRef<NoteStorage>(
+    new InMemoryNoteStorage(createSampleNotes()),
+  );
+  // Name of the opened folder (if using file system storage)
+  const [folderName, setFolderName] = useState<string | undefined>(undefined);
+
+  // Check if File System Access API is supported
+  const isFileSystemSupported = useMemo(
+    () => isFileSystemAccessSupported(),
+    [],
+  );
 
   // Load all notes from storage
   const loadNotes = useCallback(async () => {
-    const noteList = await storage.listNotes();
+    const noteList = await storageRef.current.listNotes();
     setNotes(noteList);
     return noteList;
   }, []);
@@ -37,7 +51,7 @@ export function App() {
       const noteList = await loadNotes();
       // Select first note if none selected
       if (noteList.length > 0) {
-        const firstNote = await storage.loadNote(noteList[0].id);
+        const firstNote = await storageRef.current.loadNote(noteList[0].id);
         if (firstNote) {
           setSelectedNote(firstNote);
           setContent(firstNote.content);
@@ -47,22 +61,52 @@ export function App() {
     init();
   }, [loadNotes]);
 
+  // Handle opening a folder
+  const handleOpenFolder = useCallback(async () => {
+    try {
+      const directoryHandle = await pickDirectory();
+      const fileStorage = new FileSystemNoteStorage(directoryHandle);
+      await fileStorage.initialize();
+
+      // Switch to file system storage
+      storageRef.current = fileStorage;
+      setFolderName(directoryHandle.name);
+
+      // Reset selection and load notes from the new storage
+      setSelectedNote(null);
+      setContent("");
+      const noteList = await loadNotes();
+
+      // Select first note if available
+      if (noteList.length > 0) {
+        const firstNote = await storageRef.current.loadNote(noteList[0].id);
+        if (firstNote) {
+          setSelectedNote(firstNote);
+          setContent(firstNote.content);
+        }
+      }
+    } catch (error) {
+      // User cancelled or error occurred
+      console.error("Failed to open folder:", error);
+    }
+  }, [loadNotes]);
+
   // Handle note selection
   const handleSelectNote = useCallback(
     async (noteId: string) => {
       // Save current note before switching
       if (selectedNote) {
-        await storage.saveNote({ ...selectedNote, content });
+        await storageRef.current.saveNote({ ...selectedNote, content });
       }
 
       // Load selected note
-      const note = await storage.loadNote(noteId);
+      const note = await storageRef.current.loadNote(noteId);
       if (note) {
         setSelectedNote(note);
         setContent(note.content);
       }
     },
-    [selectedNote, content]
+    [selectedNote, content],
   );
 
   // Handle content change
@@ -76,11 +120,11 @@ export function App() {
   const handleCreateNote = useCallback(async () => {
     // Save current note first
     if (selectedNote) {
-      await storage.saveNote({ ...selectedNote, content });
+      await storageRef.current.saveNote({ ...selectedNote, content });
     }
 
     // Create new note
-    const newNote = await storage.createNote("Untitled");
+    const newNote = await storageRef.current.createNote("Untitled");
     await loadNotes();
 
     // Select the new note
@@ -98,6 +142,9 @@ export function App() {
             selectedNoteId={selectedNote?.id}
             onSelectNote={handleSelectNote}
             onCreateNote={handleCreateNote}
+            onOpenFolder={handleOpenFolder}
+            isFileSystemSupported={isFileSystemSupported}
+            folderName={folderName}
           />
         }
         centerPanel={
