@@ -23,6 +23,8 @@ export function App() {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   // Current editor content
   const [content, setContent] = useState("");
+  // Scroll position ratio (0 to 1) for sync between editor and preview
+  const [scrollRatio, setScrollRatio] = useState(0);
 
   // Load all notes from storage
   const loadNotes = useCallback(async () => {
@@ -62,7 +64,7 @@ export function App() {
         setContent(note.content);
       }
     },
-    [selectedNote, content]
+    [selectedNote, content],
   );
 
   // Handle content change
@@ -88,6 +90,11 @@ export function App() {
     setContent(newNote.content);
   }, [selectedNote, content, loadNotes]);
 
+  // Handle editor scroll
+  const handleEditorScroll = useCallback((ratio: number) => {
+    setScrollRatio(ratio);
+  }, []);
+
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
@@ -104,6 +111,7 @@ export function App() {
           <NoteEditor
             content={content}
             onChange={handleContentChange}
+            onScroll={handleEditorScroll}
             placeholder={
               selectedNote
                 ? "Start writing..."
@@ -113,7 +121,10 @@ export function App() {
           />
         }
         rightPanel={
-          <PreviewPane content={content || selectedNote?.content || ""} />
+          <PreviewPane
+            content={content || selectedNote?.content || ""}
+            scrollRatio={scrollRatio}
+          />
         }
       />
     </View>
