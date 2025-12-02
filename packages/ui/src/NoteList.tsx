@@ -29,7 +29,7 @@ export interface NoteListProps {
 
 /**
  * Format date with time for display in the note list.
- * Shows both date and time for better clarity.
+ * Shows relative time for recent notes with time information.
  */
 function formatDateTime(date: Date): string {
   const now = new Date();
@@ -50,7 +50,9 @@ function formatDateTime(date: Date): string {
     return `Yesterday ${timeStr}`;
   }
   if (days < 7) {
-    return `${days} days ago`;
+    // For past week, show day name and time
+    const dayName = date.toLocaleDateString([], { weekday: "short" });
+    return `${dayName} ${timeStr}`;
   }
 
   // For older dates, show full date in locale format
