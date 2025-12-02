@@ -62,6 +62,8 @@ export class FileSystemNoteStorage implements NoteStorage {
   private directoryHandle: FileSystemDirectoryHandle;
   /** Cache of note metadata for faster listing */
   private noteCache: Map<NoteId, NoteMeta> = new Map();
+  /** Flag to track if cache has been initialized */
+  private cacheInitialized = false;
 
   constructor(directoryHandle: FileSystemDirectoryHandle) {
     this.directoryHandle = directoryHandle;
@@ -86,15 +88,25 @@ export class FileSystemNoteStorage implements NoteStorage {
         });
       }
     }
+    this.cacheInitialized = true;
   }
 
   async listNotes(): Promise<NoteMeta[]> {
-    // Refresh the cache by scanning the directory
-    await this.initialize();
+    // Only refresh if cache hasn't been initialized
+    if (!this.cacheInitialized) {
+      await this.initialize();
+    }
 
     const metas = Array.from(this.noteCache.values());
     // Sort by updatedAt descending (most recent first)
     return metas.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+  }
+
+  /**
+   * Force a refresh of the note cache from the file system.
+   */
+  async refreshCache(): Promise<void> {
+    await this.initialize();
   }
 
   async loadNote(id: NoteId): Promise<Note | null> {
@@ -105,13 +117,16 @@ export class FileSystemNoteStorage implements NoteStorage {
       const content = await file.text();
       const title = this.fileNameToTitle(fileName);
 
+      // Note: File System API doesn't provide creation time,
+      // so we use lastModified for both createdAt and updatedAt.
+      const modifiedAt = new Date(file.lastModified);
       return {
         id,
         title,
         filePath: fileName,
         content,
-        createdAt: new Date(file.lastModified),
-        updatedAt: new Date(file.lastModified),
+        createdAt: modifiedAt,
+        updatedAt: modifiedAt,
       };
     } catch {
       // File not found or access error
@@ -228,6 +243,23 @@ export class FileSystemNoteStorage implements NoteStorage {
   }
 
   /**
+   * Sanitize a string for use as a file name.
+   * Removes or replaces characters that are invalid on most file systems.
+   */
+  private sanitizeFileName(name: string): string {
+    // Replace invalid file system characters with underscores
+    // Invalid on Windows: < > : " / \ | ? *
+    // Also handle control characters and leading/trailing spaces/dots
+    return name
+      .replace(/[<>:"/\\|?*]/g, "_")
+      .replace(/[\x00-\x1f\x80-\x9f]/g, "") // Remove control characters
+      .replace(/^\.+/, "") // Remove leading dots
+      .replace(/\.+$/, "") // Remove trailing dots
+      .replace(/\s+/g, " ") // Normalize whitespace
+      .trim();
+  }
+
+  /**
    * Convert a file name (e.g., "My Note.md") to a note ID.
    */
   private fileNameToId(fileName: string): NoteId {
@@ -244,23 +276,22 @@ export class FileSystemNoteStorage implements NoteStorage {
 
   /**
    * Convert a note ID to a file name.
+   * Returns the sanitized file name from cache if available.
    */
   private idToFileName(id: NoteId): string {
-    // The ID is based on the title, so we need to find the original file
-    // For simplicity, we store the title-based ID and reconstruct the filename
-    // This assumes the title doesn't contain special characters that would break this
     const meta = this.noteCache.get(id);
     if (meta) {
-      return `${meta.title}.md`;
+      return `${this.sanitizeFileName(meta.title)}.md`;
     }
-    // Fallback: convert ID back to approximate title
-    return `${id}.md`;
+    // Fallback: use the ID as the file name
+    return `${this.sanitizeFileName(id)}.md`;
   }
 
   /**
    * Convert a title to a note ID.
+   * Normalizes the title for use as a unique identifier.
    */
   private titleToId(title: string): NoteId {
-    return title.toLowerCase().replace(/\s+/g, "-");
+    return this.sanitizeFileName(title).toLowerCase().replace(/\s+/g, "-");
   }
 }

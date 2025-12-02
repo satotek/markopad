@@ -91,13 +91,18 @@ export function App() {
     }
   }, [loadNotes]);
 
+  // Save the current note if one is selected
+  const saveCurrentNote = useCallback(async () => {
+    if (selectedNote) {
+      await storageRef.current.saveNote({ ...selectedNote, content });
+    }
+  }, [selectedNote, content]);
+
   // Handle note selection
   const handleSelectNote = useCallback(
     async (noteId: string) => {
       // Save current note before switching
-      if (selectedNote) {
-        await storageRef.current.saveNote({ ...selectedNote, content });
-      }
+      await saveCurrentNote();
 
       // Load selected note
       const note = await storageRef.current.loadNote(noteId);
@@ -106,7 +111,7 @@ export function App() {
         setContent(note.content);
       }
     },
-    [selectedNote, content],
+    [saveCurrentNote],
   );
 
   // Handle content change
@@ -119,9 +124,7 @@ export function App() {
   // Handle creating a new note
   const handleCreateNote = useCallback(async () => {
     // Save current note first
-    if (selectedNote) {
-      await storageRef.current.saveNote({ ...selectedNote, content });
-    }
+    await saveCurrentNote();
 
     // Create new note
     const newNote = await storageRef.current.createNote("Untitled");
@@ -130,7 +133,7 @@ export function App() {
     // Select the new note
     setSelectedNote(newNote);
     setContent(newNote.content);
-  }, [selectedNote, content, loadNotes]);
+  }, [saveCurrentNote, loadNotes]);
 
   return (
     <View style={styles.container}>
