@@ -1,5 +1,6 @@
 // Types
 
+export { FileSystemNoteStorage } from "./file-system-storage";
 export { createSampleNotes, InMemoryNoteStorage } from "./in-memory-storage";
 
 // Storage
