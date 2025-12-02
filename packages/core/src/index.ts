@@ -1,5 +1,10 @@
 // Types
 
+export {
+  FileSystemNoteStorage,
+  isFileSystemAccessSupported,
+  pickDirectory,
+} from "./file-system-storage";
 export { createSampleNotes, InMemoryNoteStorage } from "./in-memory-storage";
 
 // Storage

@@ -10,6 +10,12 @@ export interface NoteListProps {
   onSelectNote: (noteId: string) => void;
   /** Callback when creating a new note */
   onCreateNote?: () => void;
+  /** Callback when opening a folder (for file system storage) */
+  onOpenFolder?: () => void;
+  /** Whether the File System Access API is supported */
+  isFileSystemSupported?: boolean;
+  /** Name of the currently open folder */
+  folderName?: string;
 }
 
 /**
@@ -20,6 +26,9 @@ export function NoteList({
   selectedNoteId,
   onSelectNote,
   onCreateNote,
+  onOpenFolder,
+  isFileSystemSupported = false,
+  folderName,
 }: NoteListProps) {
   const formatDate = (date: Date): string => {
     const now = new Date();
@@ -40,6 +49,21 @@ export function NoteList({
 
   return (
     <View style={styles.container}>
+      {/* Folder selection section */}
+      {isFileSystemSupported && (
+        <View style={styles.folderSection}>
+          <Pressable
+            style={styles.folderButton}
+            onPress={onOpenFolder}
+            accessibilityRole="button"
+            accessibilityLabel="Open folder"
+          >
+            <Text style={styles.folderButtonText}>
+              {folderName ? `📁 ${folderName}` : "📂 フォルダを開く"}
+            </Text>
+          </Pressable>
+        </View>
+      )}
       <View style={styles.header}>
         <Text style={styles.headerText}>Notes</Text>
         {onCreateNote && (
@@ -89,6 +113,26 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f5f5",
     borderRightWidth: 1,
     borderRightColor: "#e0e0e0",
+  },
+  folderSection: {
+    padding: 8,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e0e0e0",
+    backgroundColor: "#e8e8e8",
+  },
+  folderButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 4,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#d0d0d0",
+  },
+  folderButtonText: {
+    fontSize: 12,
+    color: "#1a1a1a",
+    textAlign: "center",
   },
   header: {
     flexDirection: "row",
