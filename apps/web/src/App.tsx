@@ -12,6 +12,13 @@ import { StyleSheet, View } from "react-native";
 // Initialize storage with sample notes
 const storage = new InMemoryNoteStorage(createSampleNotes());
 
+// Convert Note to NoteMeta
+const toNoteMeta = (note: Note): NoteMeta => ({
+  id: note.id,
+  title: note.title,
+  updatedAt: note.updatedAt,
+});
+
 /**
  * Main App component for MarkoPad web application.
  * Manages the note list, editor, and preview in a three-pane layout.
@@ -40,13 +47,7 @@ export function App() {
         return;
       }
       const searchResults = await storage.searchNotes(query);
-      // Convert Note[] to NoteMeta[]
-      const noteMetas: NoteMeta[] = searchResults.map((note) => ({
-        id: note.id,
-        title: note.title,
-        updatedAt: note.updatedAt,
-      }));
-      setNotes(noteMetas);
+      setNotes(searchResults.map(toNoteMeta));
     },
     [loadNotes],
   );

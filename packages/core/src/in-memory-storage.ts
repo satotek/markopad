@@ -24,8 +24,7 @@ export class InMemoryNoteStorage implements NoteStorage {
         updatedAt: note.updatedAt,
       });
     }
-    // Sort by updatedAt descending (most recent first)
-    return metas.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+    return this.sortByUpdatedAtDesc(metas);
   }
 
   async loadNote(id: NoteId): Promise<Note | null> {
@@ -101,10 +100,7 @@ export class InMemoryNoteStorage implements NoteStorage {
   async searchNotes(query: string): Promise<Note[]> {
     if (!query.trim()) {
       // Return all notes sorted by updatedAt if query is empty
-      const notes = Array.from(this.notes.values());
-      return notes.sort(
-        (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime(),
-      );
+      return this.sortByUpdatedAtDesc(Array.from(this.notes.values()));
     }
 
     const lowerQuery = query.toLowerCase();
@@ -119,14 +115,15 @@ export class InMemoryNoteStorage implements NoteStorage {
       }
     }
 
-    // Sort by updatedAt descending (most recent first)
-    return matchingNotes.sort(
-      (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime(),
-    );
+    return this.sortByUpdatedAtDesc(matchingNotes);
   }
 
   private titleToId(title: string): NoteId {
     return title.toLowerCase().replace(/\s+/g, "-");
+  }
+
+  private sortByUpdatedAtDesc<T extends { updatedAt: Date }>(items: T[]): T[] {
+    return items.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
   }
 }
 
