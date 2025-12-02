@@ -98,6 +98,33 @@ export class InMemoryNoteStorage implements NoteStorage {
     return note;
   }
 
+  async searchNotes(query: string): Promise<Note[]> {
+    if (!query.trim()) {
+      // Return all notes sorted by updatedAt if query is empty
+      const notes = Array.from(this.notes.values());
+      return notes.sort(
+        (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime(),
+      );
+    }
+
+    const lowerQuery = query.toLowerCase();
+    const matchingNotes: Note[] = [];
+
+    for (const note of this.notes.values()) {
+      const titleMatch = note.title.toLowerCase().includes(lowerQuery);
+      const contentMatch = note.content.toLowerCase().includes(lowerQuery);
+
+      if (titleMatch || contentMatch) {
+        matchingNotes.push(note);
+      }
+    }
+
+    // Sort by updatedAt descending (most recent first)
+    return matchingNotes.sort(
+      (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime(),
+    );
+  }
+
   private titleToId(title: string): NoteId {
     return title.toLowerCase().replace(/\s+/g, "-");
   }

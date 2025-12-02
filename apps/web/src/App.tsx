@@ -31,6 +31,26 @@ export function App() {
     return noteList;
   }, []);
 
+  // Search notes
+  const handleSearch = useCallback(
+    async (query: string) => {
+      if (!query.trim()) {
+        // If empty search, reload all notes
+        await loadNotes();
+        return;
+      }
+      const searchResults = await storage.searchNotes(query);
+      // Convert Note[] to NoteMeta[]
+      const noteMetas: NoteMeta[] = searchResults.map((note) => ({
+        id: note.id,
+        title: note.title,
+        updatedAt: note.updatedAt,
+      }));
+      setNotes(noteMetas);
+    },
+    [loadNotes],
+  );
+
   // Load notes on mount
   useEffect(() => {
     const init = async () => {
@@ -62,7 +82,7 @@ export function App() {
         setContent(note.content);
       }
     },
-    [selectedNote, content]
+    [selectedNote, content],
   );
 
   // Handle content change
@@ -98,6 +118,7 @@ export function App() {
             selectedNoteId={selectedNote?.id}
             onSelectNote={handleSelectNote}
             onCreateNote={handleCreateNote}
+            onSearch={handleSearch}
           />
         }
         centerPanel={

@@ -37,4 +37,11 @@ export interface NoteStorage {
    * Returns the created note.
    */
   createNote(title: string, content?: string): Promise<Note>;
+
+  /**
+   * Search notes by query string.
+   * Searches both title and content.
+   * Returns matching notes.
+   */
+  searchNotes(query: string): Promise<Note[]>;
 }

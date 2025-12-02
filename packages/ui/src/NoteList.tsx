@@ -1,5 +1,13 @@
 import type { NoteMeta } from "@markopad/core";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
 export interface NoteListProps {
   /** List of notes to display */
@@ -10,6 +18,8 @@ export interface NoteListProps {
   onSelectNote: (noteId: string) => void;
   /** Callback when creating a new note */
   onCreateNote?: () => void;
+  /** Callback when search query changes */
+  onSearch?: (query: string) => void;
 }
 
 /**
@@ -20,7 +30,15 @@ export function NoteList({
   selectedNoteId,
   onSelectNote,
   onCreateNote,
+  onSearch,
 }: NoteListProps) {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    onSearch?.(query);
+  };
+
   const formatDate = (date: Date): string => {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
@@ -53,11 +71,22 @@ export function NoteList({
           </Pressable>
         )}
       </View>
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search notes..."
+          value={searchQuery}
+          onChangeText={handleSearchChange}
+          accessibilityLabel="Search notes"
+        />
+      </View>
       <ScrollView style={styles.list}>
         {notes.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>
-              No notes yet. Create one to get started!
+              {searchQuery
+                ? "No notes match your search."
+                : "No notes yet. Create one to get started!"}
             </Text>
           </View>
         ) : (
@@ -115,6 +144,24 @@ const styles = StyleSheet.create({
   },
   newButtonText: {
     fontSize: 12,
+    color: "#1a1a1a",
+  },
+  searchContainer: {
+    padding: 8,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e0e0e0",
+    backgroundColor: "#f5f5f5",
+  },
+  searchInput: {
+    height: 32,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    borderRadius: 4,
+    fontSize: 13,
     color: "#1a1a1a",
   },
   list: {
