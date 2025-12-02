@@ -23,6 +23,8 @@ export function App() {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   // Current editor content
   const [content, setContent] = useState("");
+  // Search query for filtering notes
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Load all notes from storage
   const loadNotes = useCallback(async () => {
@@ -62,7 +64,7 @@ export function App() {
         setContent(note.content);
       }
     },
-    [selectedNote, content]
+    [selectedNote, content],
   );
 
   // Handle content change
@@ -88,6 +90,34 @@ export function App() {
     setContent(newNote.content);
   }, [selectedNote, content, loadNotes]);
 
+  // Handle deleting a note
+  const handleDeleteNote = useCallback(
+    async (noteId: string) => {
+      await storage.deleteNote(noteId);
+      const noteList = await loadNotes();
+
+      // If deleted note was selected, select another one
+      if (selectedNote?.id === noteId) {
+        if (noteList.length > 0) {
+          const firstNote = await storage.loadNote(noteList[0].id);
+          if (firstNote) {
+            setSelectedNote(firstNote);
+            setContent(firstNote.content);
+          }
+        } else {
+          setSelectedNote(null);
+          setContent("");
+        }
+      }
+    },
+    [selectedNote, loadNotes],
+  );
+
+  // Handle search query change
+  const handleSearchChange = useCallback((query: string) => {
+    setSearchQuery(query);
+  }, []);
+
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
@@ -98,6 +128,9 @@ export function App() {
             selectedNoteId={selectedNote?.id}
             onSelectNote={handleSelectNote}
             onCreateNote={handleCreateNote}
+            onDeleteNote={handleDeleteNote}
+            searchQuery={searchQuery}
+            onSearchChange={handleSearchChange}
           />
         }
         centerPanel={
