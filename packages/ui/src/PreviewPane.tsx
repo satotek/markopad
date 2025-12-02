@@ -1,6 +1,7 @@
 import { renderMarkdown } from "@markopad/preview";
 import { useMemo } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
+import { useTheme } from "./ThemeProvider";
 
 export interface PreviewPaneProps {
   /** Markdown content to preview */
@@ -98,6 +99,8 @@ const createPreviewHtml = (htmlContent: string): string => `<!DOCTYPE html>
  * On web, uses an iframe with srcdoc. On native, would use WebView.
  */
 export function PreviewPane({ content }: PreviewPaneProps) {
+  const { colors, colorScheme } = useTheme();
+
   // Render Markdown to HTML
   const { html } = useMemo(() => renderMarkdown(content), [content]);
 
@@ -107,14 +110,27 @@ export function PreviewPane({ content }: PreviewPaneProps) {
   // Web-specific rendering with iframe using srcdoc
   if (Platform.OS === "web") {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerText}>Preview</Text>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View
+          style={[
+            styles.header,
+            {
+              backgroundColor: colors.backgroundSecondary,
+              borderBottomColor: colors.border,
+            },
+          ]}
+        >
+          <Text style={[styles.headerText, { color: colors.text }]}>
+            Preview
+          </Text>
         </View>
         <View style={styles.iframeContainer}>
           <iframe
             srcDoc={srcdoc}
-            style={iframeStyles}
+            style={{
+              ...iframeStyles,
+              backgroundColor: colors.background,
+            }}
             title="Markdown Preview"
             sandbox="allow-scripts"
           />
@@ -125,12 +141,20 @@ export function PreviewPane({ content }: PreviewPaneProps) {
 
   // Native fallback (would use WebView in a real implementation)
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerText}>Preview</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: colors.backgroundSecondary,
+            borderBottomColor: colors.border,
+          },
+        ]}
+      >
+        <Text style={[styles.headerText, { color: colors.text }]}>Preview</Text>
       </View>
       <View style={styles.fallback}>
-        <Text style={styles.fallbackText}>
+        <Text style={[styles.fallbackText, { color: colors.textSecondary }]}>
           Preview not available on this platform yet.
         </Text>
       </View>
@@ -143,26 +167,21 @@ const iframeStyles: React.CSSProperties = {
   width: "100%",
   height: "100%",
   border: "none",
-  backgroundColor: "#ffffff",
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     minWidth: 300,
-    backgroundColor: "#ffffff",
   },
   header: {
     padding: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-    backgroundColor: "#f5f5f5",
   },
   headerText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#1a1a1a",
   },
   iframeContainer: {
     flex: 1,
@@ -175,7 +194,6 @@ const styles = StyleSheet.create({
   },
   fallbackText: {
     fontSize: 14,
-    color: "#666666",
     textAlign: "center",
   },
 });

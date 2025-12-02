@@ -1,4 +1,5 @@
 import { StyleSheet, Text, TextInput, View } from "react-native";
+import { useTheme } from "./ThemeProvider";
 
 export interface NoteEditorProps {
   /** Current content of the note */
@@ -20,17 +21,41 @@ export function NoteEditor({
   placeholder = "Start writing your note...",
   editable = true,
 }: NoteEditorProps) {
+  const { colors } = useTheme();
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerText}>Editor</Text>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: colors.background,
+          borderRightColor: colors.border,
+        },
+      ]}
+    >
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: colors.backgroundSecondary,
+            borderBottomColor: colors.border,
+          },
+        ]}
+      >
+        <Text style={[styles.headerText, { color: colors.text }]}>Editor</Text>
       </View>
       <TextInput
-        style={styles.textInput}
+        style={[
+          styles.textInput,
+          {
+            color: colors.text,
+            backgroundColor: colors.background,
+          },
+        ]}
         value={content}
         onChangeText={onChange}
         placeholder={placeholder}
-        placeholderTextColor="#999999"
+        placeholderTextColor={colors.textSecondary}
         editable={editable}
         multiline
         textAlignVertical="top"
@@ -47,20 +72,15 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 300,
     borderRightWidth: 1,
-    borderRightColor: "#e0e0e0",
-    backgroundColor: "#ffffff",
   },
   header: {
     padding: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-    backgroundColor: "#f5f5f5",
   },
   headerText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#1a1a1a",
   },
   textInput: {
     flex: 1,
@@ -68,7 +88,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
     fontFamily: "monospace",
-    color: "#1a1a1a",
-    backgroundColor: "#ffffff",
   },
 });

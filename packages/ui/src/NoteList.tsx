@@ -1,5 +1,6 @@
 import type { NoteMeta } from "@markopad/core";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useTheme } from "./ThemeProvider";
 
 export interface NoteListProps {
   /** List of notes to display */
@@ -21,6 +22,8 @@ export function NoteList({
   onSelectNote,
   onCreateNote,
 }: NoteListProps) {
+  const { colors } = useTheme();
+
   const formatDate = (date: Date): string => {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
@@ -39,24 +42,50 @@ export function NoteList({
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerText}>Notes</Text>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: colors.backgroundSecondary,
+          borderRightColor: colors.border,
+        },
+      ]}
+    >
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: colors.backgroundTertiary,
+            borderBottomColor: colors.border,
+          },
+        ]}
+      >
+        <Text style={[styles.headerText, { color: colors.text }]}>Notes</Text>
         {onCreateNote && (
           <Pressable
-            style={styles.newButton}
+            style={[
+              styles.newButton,
+              {
+                backgroundColor: colors.background,
+                borderColor: colors.border,
+              },
+            ]}
             onPress={onCreateNote}
             accessibilityRole="button"
             accessibilityLabel="Create new note"
           >
-            <Text style={styles.newButtonText}>+ New</Text>
+            <Text style={[styles.newButtonText, { color: colors.text }]}>
+              + New
+            </Text>
           </Pressable>
         )}
       </View>
       <ScrollView style={styles.list}>
         {notes.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>
+            <Text
+              style={[styles.emptyStateText, { color: colors.textSecondary }]}
+            >
               No notes yet. Create one to get started!
             </Text>
           </View>
@@ -66,15 +95,23 @@ export function NoteList({
               key={note.id}
               style={[
                 styles.noteItem,
-                note.id === selectedNoteId && styles.noteItemSelected,
+                { borderBottomColor: colors.border },
+                note.id === selectedNoteId && {
+                  backgroundColor: colors.selected,
+                },
               ]}
               onPress={() => onSelectNote(note.id)}
               accessibilityRole="button"
             >
-              <Text style={styles.noteTitle} numberOfLines={1}>
+              <Text
+                style={[styles.noteTitle, { color: colors.text }]}
+                numberOfLines={1}
+              >
                 {note.title}
               </Text>
-              <Text style={styles.noteMeta}>{formatDate(note.updatedAt)}</Text>
+              <Text style={[styles.noteMeta, { color: colors.textSecondary }]}>
+                {formatDate(note.updatedAt)}
+              </Text>
             </Pressable>
           ))
         )}
@@ -86,9 +123,7 @@ export function NoteList({
 const styles = StyleSheet.create({
   container: {
     width: 250,
-    backgroundColor: "#f5f5f5",
     borderRightWidth: 1,
-    borderRightColor: "#e0e0e0",
   },
   header: {
     flexDirection: "row",
@@ -97,25 +132,19 @@ const styles = StyleSheet.create({
     padding: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-    backgroundColor: "#f0f0f0",
   },
   headerText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#1a1a1a",
   },
   newButton: {
     paddingVertical: 4,
     paddingHorizontal: 8,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: "#e0e0e0",
-    backgroundColor: "#ffffff",
   },
   newButtonText: {
     fontSize: 12,
-    color: "#1a1a1a",
   },
   list: {
     flex: 1,
@@ -125,26 +154,19 @@ const styles = StyleSheet.create({
   },
   emptyStateText: {
     fontSize: 14,
-    color: "#666666",
     textAlign: "center",
   },
   noteItem: {
     padding: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-  },
-  noteItemSelected: {
-    backgroundColor: "#e3f2fd",
   },
   noteTitle: {
     fontSize: 14,
     fontWeight: "500",
     marginBottom: 4,
-    color: "#1a1a1a",
   },
   noteMeta: {
     fontSize: 12,
-    color: "#666666",
   },
 });
