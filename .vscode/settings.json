@@ -1,0 +1,13 @@
+{
+  "editor.tabSize": 2,
+  "editor.indentSize": "tabSize",
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.organizeImports": "explicit",
+    "source.sortMembers": "explicit"
+  },
+  "[typescript, typescriptreact]": {
+    "editor.defaultFormatter": "biomejs.biome",
+    "editor.formatOnSave": true
+  }
+}

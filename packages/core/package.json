@@ -1,0 +1,14 @@
+{
+  "name": "@markopad/core",
+  "version": "0.0.1",
+  "description": "Core domain logic for MarkoPad: notes, workspace, storage abstraction",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "~5.9.2"
+  }
+}
