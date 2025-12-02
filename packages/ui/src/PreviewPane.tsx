@@ -1,10 +1,12 @@
 import { renderMarkdown } from "@markopad/preview";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 
 export interface PreviewPaneProps {
   /** Markdown content to preview */
   content: string;
+  /** Scroll position ratio (0 to 1) to sync with editor */
+  scrollRatio?: number;
 }
 
 // HTML template for the preview iframe
@@ -32,6 +34,10 @@ const createPreviewHtml = (htmlContent: string): string => `<!DOCTYPE html>
       }
     }
     * { box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       font-size: 16px;
@@ -39,7 +45,7 @@ const createPreviewHtml = (htmlContent: string): string => `<!DOCTYPE html>
       color: var(--text-color);
       background: var(--bg-color);
       padding: 20px;
-      margin: 0;
+      overflow-y: auto;
     }
     h1, h2, h3, h4, h5, h6 { margin-top: 24px; margin-bottom: 16px; font-weight: 600; }
     h1 { font-size: 2em; border-bottom: 1px solid var(--border-color); padding-bottom: 0.3em; }
@@ -89,6 +95,17 @@ const createPreviewHtml = (htmlContent: string): string => `<!DOCTYPE html>
       theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default',
       securityLevel: 'loose'
     });
+
+    // Listen for scroll sync messages from parent
+    window.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'scrollSync') {
+        const scrollRatio = event.data.scrollRatio;
+        const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (scrollableHeight > 0) {
+          window.scrollTo(0, scrollRatio * scrollableHeight);
+        }
+      }
+    });
   </script>
 </body>
 </html>`;
@@ -97,12 +114,29 @@ const createPreviewHtml = (htmlContent: string): string => `<!DOCTYPE html>
  * PreviewPane renders Markdown content with Mermaid diagram support.
  * On web, uses an iframe with srcdoc. On native, would use WebView.
  */
-export function PreviewPane({ content }: PreviewPaneProps) {
+export function PreviewPane({ content, scrollRatio }: PreviewPaneProps) {
+  // Ref for the iframe element
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
   // Render Markdown to HTML
   const { html } = useMemo(() => renderMarkdown(content), [content]);
 
   // Create the full HTML document for the iframe
   const srcdoc = useMemo(() => createPreviewHtml(html), [html]);
+
+  // Send scroll sync message to iframe when scrollRatio changes
+  useEffect(() => {
+    if (
+      Platform.OS === "web" &&
+      iframeRef.current?.contentWindow &&
+      scrollRatio !== undefined
+    ) {
+      iframeRef.current.contentWindow.postMessage(
+        { type: "scrollSync", scrollRatio },
+        "*",
+      );
+    }
+  }, [scrollRatio]);
 
   // Web-specific rendering with iframe using srcdoc
   if (Platform.OS === "web") {
@@ -113,6 +147,7 @@ export function PreviewPane({ content }: PreviewPaneProps) {
         </View>
         <View style={styles.iframeContainer}>
           <iframe
+            ref={iframeRef}
             srcDoc={srcdoc}
             style={iframeStyles}
             title="Markdown Preview"

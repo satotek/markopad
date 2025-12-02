@@ -1,4 +1,5 @@
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { useEffect, useRef } from "react";
+import { Platform, StyleSheet, Text, TextInput, View } from "react-native";
 
 export interface NoteEditorProps {
   /** Current content of the note */
@@ -9,6 +10,8 @@ export interface NoteEditorProps {
   placeholder?: string;
   /** Whether the editor is editable */
   editable?: boolean;
+  /** Callback when scroll position changes (ratio from 0 to 1) */
+  onScroll?: (scrollRatio: number) => void;
 }
 
 /**
@@ -19,13 +22,47 @@ export function NoteEditor({
   onChange,
   placeholder = "Start writing your note...",
   editable = true,
+  onScroll,
 }: NoteEditorProps) {
+  // Ref for the TextInput element
+  const textInputRef = useRef<TextInput>(null);
+
+  // Set up scroll event listener for web platform
+  useEffect(() => {
+    if (Platform.OS !== "web" || !onScroll || !textInputRef.current) {
+      return;
+    }
+
+    // Get the underlying DOM element (textarea in React Native Web)
+    // biome-ignore lint/suspicious/noExplicitAny: React Native Web internal structure is not typed
+    const element = textInputRef.current as any;
+    const domNode =
+      element._node || element._nativeTag || (element as unknown as Element);
+
+    if (!domNode || typeof domNode.addEventListener !== "function") {
+      return;
+    }
+
+    const handleScroll = () => {
+      const scrollableHeight = domNode.scrollHeight - domNode.clientHeight;
+      const scrollRatio =
+        scrollableHeight > 0 ? domNode.scrollTop / scrollableHeight : 0;
+      onScroll(scrollRatio);
+    };
+
+    domNode.addEventListener("scroll", handleScroll);
+    return () => {
+      domNode.removeEventListener("scroll", handleScroll);
+    };
+  }, [onScroll]);
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerText}>Editor</Text>
       </View>
       <TextInput
+        ref={textInputRef}
         style={styles.textInput}
         value={content}
         onChangeText={onChange}
