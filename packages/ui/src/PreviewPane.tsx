@@ -129,7 +129,7 @@ export function PreviewPane({ content }: PreviewPaneProps) {
             srcDoc={srcdoc}
             style={{
               ...iframeStyles,
-              backgroundColor: colorScheme === "dark" ? "#1e1e1e" : "#ffffff",
+              backgroundColor: colors.background,
             }}
             title="Markdown Preview"
             sandbox="allow-scripts"
